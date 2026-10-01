@@ -19,6 +19,12 @@ Copy-Item .env.example .env
 
 ## Included flows
 
+## Deploy to Vercel
+
+Import this GitHub repository in Vercel or run `npx vercel` from the project root, then deploy production with `npx vercel --prod`. Add `MONGO_URI` to the Vercel project's environment variables to persist carts and orders. Without it, the catalog uses demo data and serverless memory is temporary.
+
+## Included flows
+
 - Catalog browsing, category filtering, and product search
 - Quantity controls and a cart saved in the browser
 - Address capture and demo order placement

@@ -10,6 +10,7 @@ const app = express();
 const port = process.env.PORT || 5000;
 const memoryCarts = new Map();
 let databaseReady = false;
+let databaseConnection;
 
 const seedProducts = [
   {
@@ -195,6 +196,37 @@ const Order = mongoose.models.Order || mongoose.model("Order", orderSchema);
 app.use(cors());
 app.use(express.json({ limit: "32kb" }));
 
+async function connectDatabase() {
+  if (!process.env.MONGO_URI || databaseReady) return;
+
+  if (!databaseConnection) {
+    databaseConnection = mongoose
+      .connect(process.env.MONGO_URI, { serverSelectionTimeoutMS: 5000 })
+      .then(async () => {
+        if ((await Product.countDocuments()) === 0)
+          await Product.insertMany(seedProducts);
+        databaseReady = true;
+        console.log("MongoDB connected; catalog and orders are persistent.");
+      })
+      .catch((error) => {
+        console.error(
+          `MongoDB unavailable; using the demo catalog in memory. ${error.message}`,
+        );
+      });
+  }
+
+  await databaseConnection;
+}
+
+app.use(async (_request, _response, next) => {
+  try {
+    await connectDatabase();
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
 async function getCatalog() {
   return databaseReady ? Product.find().sort({ name: 1 }).lean() : seedProducts;
 }
@@ -338,21 +370,8 @@ app.use((error, _request, response, _next) => {
 });
 
 async function startServer() {
-  if (process.env.MONGO_URI) {
-    try {
-      await mongoose.connect(process.env.MONGO_URI, {
-        serverSelectionTimeoutMS: 5000,
-      });
-      databaseReady = true;
-      if ((await Product.countDocuments()) === 0)
-        await Product.insertMany(seedProducts);
-      console.log("MongoDB connected; catalog and orders are persistent.");
-    } catch (error) {
-      console.error(
-        `MongoDB unavailable; using the demo catalog in memory. ${error.message}`,
-      );
-    }
-  } else {
+  await connectDatabase();
+  if (!process.env.MONGO_URI) {
     console.log("MONGO_URI not set; using the demo catalog in memory.");
   }
 
@@ -361,4 +380,6 @@ async function startServer() {
   );
 }
 
-startServer();
+if (!process.env.VERCEL) startServer();
+
+export default app;
