@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import express from "express";
 import mongoose from "mongoose";
 import { randomUUID } from "node:crypto";
+import { pathToFileURL } from "node:url";
 
 dotenv.config();
 
@@ -380,6 +381,8 @@ async function startServer() {
   );
 }
 
-if (!process.env.VERCEL) startServer();
+const isDirectExecution =
+  process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+if (isDirectExecution) startServer();
 
 export default app;

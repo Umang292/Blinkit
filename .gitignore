@@ -10,8 +10,6 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
-public/assets
-public/index.html
 *.local
 .env
 
@@ -25,3 +23,5 @@ public/index.html
 *.njsproj
 *.sln
 *.sw?
+
+.vercel
